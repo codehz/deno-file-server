@@ -14,6 +14,10 @@ import { parseRange, toReadableStream } from "./stream.ts";
 import { ErrorWithStatusCode } from "./errors.ts";
 import { applyDirectTemplate } from "./dtemp.ts";
 
+mime.define({
+  "application/typescript": ["ts", "tsx"],
+}, true);
+
 export interface Config {
   port: number;
   hostname: string;
@@ -416,7 +420,9 @@ export class FileServer {
 
   async run() {
     console.log(
-      `listen on ${this.#config.hostname}:${this.#config.port} serve ${this.#config.root}`,
+      `listen on ${
+        this.#config.tls ? "https://" : "http://"
+      }${this.#config.hostname}:${this.#config.port} serve ${this.#config.root}`,
     );
     while (true) {
       try {
