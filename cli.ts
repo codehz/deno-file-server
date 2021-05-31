@@ -7,7 +7,7 @@ const cfg: FileServerConfig = {
   port: args.port ?? 80,
   hostname: args.hostname ?? "127.0.0.1",
   root: args.root ?? ".",
-  rescan_timeout: args.timeout ?? 1000 * 60,
+  rescanTimeout: args.timeout ?? 1000 * 60,
   cors: args.cors,
 };
 

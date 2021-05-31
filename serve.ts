@@ -2,7 +2,6 @@ import { Sha256 } from "https://deno.land/std@0.97.0/hash/sha256.ts";
 import {
   extname,
   join,
-  normalize,
   relative as relativePath,
   resolve as resolvePath,
   sep as pathSep,
@@ -23,7 +22,7 @@ export interface Config {
     key: string;
   };
   root: string;
-  rescan_timeout: number;
+  rescanTimeout: number;
   cors?: string;
 }
 
@@ -82,7 +81,9 @@ class CacheEntry {
             mode: stat.mode ?? -1,
             nlink: stat.nlink ?? -1,
           });
-        } catch {}
+        } catch {
+          // ignore illegal file entry
+        }
       }
       return new FolderCacheEntry(path, timeout, list);
     } else {
@@ -185,7 +186,7 @@ export class FileServer {
       : {};
   }
 
-  private async handleOptions(_event: Deno.RequestEvent): Promise<Response> {
+  private handleOptions(_event: Deno.RequestEvent): Response {
     return new Response(null, {
       status: 200,
       headers: {
@@ -203,7 +204,7 @@ export class FileServer {
       }
       this.#cache.delete(path);
     }
-    const entry = await CacheEntry.cache(path, this.#config.rescan_timeout);
+    const entry = await CacheEntry.cache(path, this.#config.rescanTimeout);
     this.#cache.set(path, entry);
     return entry;
   }
@@ -225,12 +226,12 @@ export class FileServer {
 
   private async handleGet(
     event: Deno.RequestEvent,
-    head: boolean = false,
+    head = false,
   ): Promise<Response> {
     const url = new URL(decodeURI(event.request.url));
     const pathname = decodeURIComponent(url.pathname);
-    const striped_pathname = pathname.replaceAll(/(?!^\/)\/*$/g, "");
-    const path = join(this.#config.root, striped_pathname);
+    const stripedPathname = pathname.replaceAll(/(?!^\/)\/*$/g, "");
+    const path = join(this.#config.root, stripedPathname);
     console.log("access", path);
     const cache = await this.cache(path);
     if (cache instanceof SymlinkCacheEntry) {
@@ -306,9 +307,9 @@ export class FileServer {
         }
       }
     } else if (cache instanceof FolderCacheEntry) {
-      const folder_path = striped_pathname.replace(/(?!^)(?<!\/)$/, "/");
-      if (pathname !== folder_path) {
-        url.pathname = folder_path;
+      const folderPath = stripedPathname.replace(/(?!^)(?<!\/)$/, "/");
+      if (pathname !== folderPath) {
+        url.pathname = folderPath;
         return new Response(null, {
           status: 302,
           headers: {
@@ -319,7 +320,7 @@ export class FileServer {
         });
       }
       const body = {
-        path: folder_path,
+        path: folderPath,
         list: cache.list,
       };
       const accept = new Accepts(event.request.headers);
@@ -367,7 +368,7 @@ export class FileServer {
     throw "not implemented";
   }
 
-  private async processEvent(event: Deno.RequestEvent): Promise<Response> {
+  private processEvent(event: Deno.RequestEvent): Promise<Response> | Response {
     switch (event.request.method) {
       case "OPTIONS":
         return this.handleOptions(event);

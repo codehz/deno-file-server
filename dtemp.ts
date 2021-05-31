@@ -9,7 +9,7 @@ const END = /\/\*\*\s+@inject-end\s+\*\//;
 
 export function applyDirectTemplate(
   lines: string[],
-  data: object,
+  data: Record<string, unknown>,
 ): string {
   const output: string[] = [];
   let state = State.Initial;
