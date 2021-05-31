@@ -26,6 +26,7 @@ jobs:
           deno-version: ${{ matrix.deno }} # tests across multiple Deno versions
 
       - name: Verify formatting
+        if: ${{ runner.os == 'Linux' }}
         run: deno fmt --check
 
       - name: Run linter
@@ -35,7 +36,7 @@ jobs:
         run: deno bundle --unstable cli.ts file-server.js
         
       - name: Upload a Build Artifact
-        if: ${{ runner.os == 'Linux' }}
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.deno == "v1.x" }}
         uses: actions/upload-artifact@v2.2.3
         with:
           name: bundle
