@@ -36,7 +36,7 @@ jobs:
         run: deno bundle --unstable cli.ts file-server.js
         
       - name: Upload a Build Artifact
-        if: ${{ matrix.os == 'ubuntu-latest' && matrix.deno == "v1.x" }}
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.deno == 'v1.x' }}
         uses: actions/upload-artifact@v2.2.3
         with:
           name: bundle
