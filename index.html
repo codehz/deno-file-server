@@ -33,7 +33,7 @@
       width: fit-content;
       display: grid;
 
-      grid-template-columns: min-content 1fr repeat(4, [col] max-content);
+      grid-template-columns: max-content minmax(max-content, 1fr) repeat(4, [col] max-content);
     }
 
     tbody,

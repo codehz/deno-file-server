@@ -1,7 +1,4 @@
-import {
-  attr,
-  ce
-} from "https://codehz.github.io/KISS.js/kiss.js";
+import { attr, ce } from "https://codehz.github.io/KISS.js/kiss.js";
 import marked from "https://cdn.skypack.dev/marked";
 
 const README = await (await fetch("README.md")).text();
