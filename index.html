@@ -23,8 +23,14 @@
       padding: 4px;
     }
 
+    article {
+      width: 100%;
+      overflow-x: auto;
+    }
+
     table {
       min-width: 100%;
+      width: fit-content;
       display: grid;
 
       grid-template-columns: min-content 1fr repeat(4, [col] max-content);
