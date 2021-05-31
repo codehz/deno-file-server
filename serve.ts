@@ -15,7 +15,7 @@ import { ErrorWithStatusCode } from "./errors.ts";
 import { applyDirectTemplate } from "./dtemp.ts";
 
 mime.define({
-  "application/typescript": ["ts", "tsx"],
+  "text/typescript": ["ts", "tsx"],
 }, true);
 
 export interface Config {
