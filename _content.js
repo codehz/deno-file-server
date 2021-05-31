@@ -1,8 +1,6 @@
 import {
   attr,
-  ce,
-  discard,
-  on,
+  ce
 } from "https://codehz.github.io/KISS.js/kiss.js";
 import marked from "https://cdn.skypack.dev/marked";
 
