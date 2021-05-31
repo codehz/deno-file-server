@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Loading...</title>
+  <meta name="color-scheme" content="light dark">
+  <style>
+    body {
+      font-family: monospace;
+      font-size: 16px;
+    }
+
+    #title a {
+      text-decoration: none;
+      color: unset;
+    }
+
+    #title a+a::before {
+      content: "/";
+      padding: 4px;
+    }
+
+    table {
+      min-width: 100%;
+    }
+
+    th {
+      user-select: none;
+    }
+
+    tbody td {
+      padding: 2px 8px;
+    }
+
+    tbody>tr {
+      background-color: rgba(0, 0, 0, 0.1);
+    }
+
+    tbody>tr:nth-child(odd) {
+      background-color: rgba(0, 0, 0, 0.05);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      tbody>tr {
+        background-color: rgba(255, 255, 255, 0.1);
+      }
+
+      tbody>tr:nth-child(odd) {
+        background-color: rgba(255, 255, 255, 0.05);
+      }
+    }
+
+    footer {
+      padding: 8px 16px;
+      text-align: center;
+      font-size: 12px;
+    }
+  </style>
+</head>
+
+<body>
+  <script type="module">
+    import { ce, attr, discard, on } from "https://codehz.github.io/KISS.js/kiss.js";
+
+    /** @inject-begin data */
+    const data = {
+      path: "/", list: [{
+        filename: "index.html",
+        birthtime: new Date().getTime(),
+        mtime: new Date().getTime(),
+        kind: 0,
+        size: 2,
+        mode: 493,
+        nlink: -1,
+      }]
+    };
+    /** @inject-end */
+
+    function readableFileSize(size) {
+      var units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+      var i = 0;
+      while (size >= 1024) {
+        size /= 1024;
+        ++i;
+      }
+      return size.toFixed(1) + ' ' + units[i];
+    }
+
+    function mapKind(kind) {
+      return ['-', 'd', 'l'][kind]
+    }
+
+    function mapRwx(value) {
+      const r = (value & 4) != 0;
+      const w = (value & 2) != 0;
+      const x = (value & 1) != 0;
+      return (r ? "r" : "-") + (w ? "w" : "-") + (x ? "x" : "-")
+    }
+
+    function mapMode(mode) {
+      if (mode < 0) {
+        return "?????????";
+      }
+      return mapRwx(mode >> 6) + mapRwx(mode >> 3) + mapRwx(mode);
+    }
+
+    const timefmt = new Intl.RelativeTimeFormat(undefined, { numeric: "auto", style: "long" });
+
+    function renderTime(time) {
+      const units = [
+        ['year', 31536000000],
+        ['month', 2628000000],
+        ['day', 86400000],
+        ['hour', 3600000],
+        ['minute', 60000],
+        ['second', 1000],
+      ]
+
+      const elapsed = new Date(time).getTime() - new Date().getTime()
+
+      for (const [unit, amount] of units) {
+        if (Math.abs(elapsed) > amount || unit === 'second') {
+          return timefmt.format(Math.round(elapsed / amount), unit)
+        }
+      }
+    }
+
+    function renderItems(item) {
+      return ce("tr.item", [
+        ce("td.mode", mapKind(item.kind) + mapMode(item.mode)),
+        ce("td.filename", ce('a', attr({ href: item.filename + (item.kind == 1 ? "/" : "") }), item.filename)),
+        ce("td.size", readableFileSize(item.size)),
+        ce("td.time", renderTime(item.birthtime), attr({ title: new Date(item.birthtime).toLocaleString() })),
+        ce("td.time", renderTime(item.mtime), attr({ title: new Date(item.mtime).toLocaleString() })),
+        ce("td.nlink", item.nlink + ""),
+      ]);
+    }
+
+    document.title = data.path;
+
+    const state = {
+      sortKey: null,
+      sortDir: true,
+    };
+
+    function createHeader({ display, sortKey }) {
+      let title = display;
+      if (sortKey && state.sortKey && sortKey === state.sortKey) {
+        title += state.sortDir ? " ▲" : " ▼"
+      }
+      return ce("th", title, sortKey && on("click", e => {
+        const evt = new CustomEvent("sort", { detail: sortKey, bubbles: true });
+        e.srcElement.dispatchEvent(evt);
+      }));
+    }
+
+    function sortByKey(key, sortOrder = 1) {
+      return function (a, b) {
+        var result = (a[key] < b[key]) ? -1 : (a[key] > b[key]) ? 1 : 0;
+        return result * sortOrder;
+      }
+    }
+
+    function renderTable(article) {
+      if (state.sortKey) {
+        data.list.sort(sortByKey(state.sortKey, state.sortDir ? 1 : -1));
+      }
+      return ce("table.list",
+        ce("thead", ce("tr", [{
+          display: "File Mode",
+        }, {
+          display: "File Name",
+          sortKey: "filename"
+        }, {
+          display: "File Size",
+          sortKey: "size"
+        }, {
+          display: "Created Time",
+          sortKey: "birthtime"
+        }, {
+          display: "Modify Time",
+          sortKey: "mtime"
+        }, {
+          display: "Link count"
+        }].map(createHeader))),
+        ce("tbody", data.list.map(renderItems)));
+    }
+
+    function onsort({ detail, currentTarget }) {
+      if (detail === state.sortKey) {
+        state.sortDir = !state.sortDir;
+      } else {
+        state.sortKey = detail;
+        state.sortDir = true;
+      }
+      ce(currentTarget, renderTable);
+    }
+
+    function renderBreadcrumb(path) {
+      if (path == "/") {
+        return ce("span", "root")
+      } else {
+        const parts = path.split("/").slice(0, -1).map(x => ({ name: x, path: x + "/" }));
+        parts[0].name = "root";
+        let p = "";
+        for (const part of parts) {
+          p += part.path;
+          part.path = p;
+        }
+        console.log(parts);
+        return parts.map(x => ce("a", attr({ href: x.path }), x.name));
+      }
+    }
+
+    ce(document.body, [
+      ce("header", [
+        ce("div#title", "Current Path: ", renderBreadcrumb(data.path))
+      ]),
+      ce("article", on("sort", onsort), renderTable),
+      ce("footer", "Generated by mini file server")
+    ]);
+  </script>
+</body>
+
+</html>
