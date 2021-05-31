@@ -31,9 +31,6 @@ jobs:
       - name: Run linter
         run: deno lint --unstable
 
-      - name: Cache dependencies
-        run: deno cache cli.ts
-
       - name: Bundle
         run: deno bundle --unstable cli.ts file-server.js
         
